@@ -1,59 +1,108 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+---
 
-# Initialize the Flask app
-app = Flask(__name__)
+## Prerequisites
 
-# Configure the PostgreSQL connection URL
+Ensure you have the following installed before proceeding:
+
+- Python 3.7+
+- PostgreSQL database
+- Required Python libraries (`flask`, `flask_sqlalchemy`)
+
+---
+
+## Setup Instructions
+
+### Step 1: Clone the Repository
+
+```bash
+git clone <repository-url>
+cd <repository-name>
+```
+
+### Step 2: Install Dependencies
+
+Create a virtual environment and install required Python libraries:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # For Windows: venv\Scripts\activate
+pip install flask flask_sqlalchemy
+```
+
+### Step 3: Update Database Configuration
+
+Modify the database connection URL in the application:
+
+```python
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://user1:Localhost_1234567@34.27.54.14:5432/mono2micro'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking to save resources
+```
+- Replace `user1`, `Localhost_1234567`, `34.27.54.14`, and `mono2micro` with your actual PostgreSQL credentials and database details.
 
-# Initialize the SQLAlchemy object
-db = SQLAlchemy(app)
+### Step 4: Run the Application
 
-# Define a model for the 'users' table
-class User(db.Model):
-    __tablename__ = 'users'  # Table name in the database
-    
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), nullable=False, unique=True)
-    email = db.Column(db.String(100), nullable=False, unique=True)
+Start the Flask application:
 
-    def __repr__(self):
-        return f"<User {self.username}>"
+```bash
+python app.py
+```
 
-# Create the tables in the database
-@app.before_request
-def create_tables():
-    # Ensure that tables are created before handling any requests
-    db.create_all()
+The application will run at `http://0.0.0.0:5000`.
 
-# Route to insert a new user into the 'users' table
-@app.route('/add_user', methods=['POST'])
-def add_user():
-    data = request.get_json()
-    username = data.get('username')
-    email = data.get('email')
+---
 
-    # Create a new user object
-    new_user = User(username=username, email=email)
+## API Endpoints
 
-    try:
-        # Add the new user to the database and commit the transaction
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify({"message": "User added successfully!"}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": "Error occurred while adding user", "error": str(e)}), 500
+### 1. Add a User
 
-# Route to fetch all users from the 'users' table
-@app.route('/get_users', methods=['GET'])
-def get_users():
-    users = User.query.all()
-    users_list = [{"id": user.id, "username": user.username, "email": user.email} for user in users]
-    return jsonify(users_list)
+**Endpoint:** `/add_user`  
+**Method:** `POST`
 
-# Run the Flask application
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+Add a new user to the `users` table.
+
+**Request Body (JSON):**
+```json
+{
+    "username": "example_user",
+    "email": "example_user@example.com"
+}
+```
+
+**Response:**
+- Success: HTTP 201 with message
+- Failure: HTTP 500 with error message
+
+**Example cURL Command:**
+```bash
+curl -X POST http://localhost:5000/add_user \
+-H "Content-Type: application/json" \
+-d '{"username": "example_user", "email": "example_user@example.com"}'
+```
+
+### 2. Get All Users
+
+**Endpoint:** `/get_users`  
+**Method:** `GET`
+
+Retrieve all users from the `users` table.
+
+**Response:**
+- Success: HTTP 200 with list of users (JSON array)
+
+**Example Response:**
+```json
+[
+    {
+        "id": 1,
+        "username": "example_user",
+        "email": "example_user@example.com"
+    }
+]
+```
+
+**Example cURL Command:**
+```bash
+curl -X GET http://localhost:5000/get_users
+```
+
+---
+
